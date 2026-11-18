@@ -33,3 +33,10 @@ npm run dev
 כלים: `list_workouts`, `save_workout`, `set_workout_day`, `delete_workout`, `get_history`, `get_progress`, `log_workout`, `search_exercise_demos`.
 הסוד נמצא בנתיב, כך שהחיבור עובד כ-Custom Connector ב-claude.ai בלי OAuth. מי שיש לו את ה-URL יכול לקרוא ולשנות נתונים – לא לשתף אותו.
 להחלפת הסוד: לשנות את `MCP_SECRET` ב-Vercel, לעשות redeploy, ולעדכן את ה-URL בקונקטור.
+
+## בדיקות
+```bash
+npm test          # הרצה חד-פעמית (Vitest)
+npm run test:watch
+```
+הבדיקות רצות אוטומטית כחלק מ-`npm run build`, ולכן ב-Vercel בדיקה שנכשלה עוצרת את ה-deploy. כללי העבודה ל-Claude נמצאים ב-`CLAUDE.md`.
