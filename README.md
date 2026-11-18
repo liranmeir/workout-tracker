@@ -27,3 +27,9 @@ npm run dev
 ## הדגמות תרגילים
 התמונות מגיעות מ-[free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Public Domain).
 לכל תרגיל שתי תמונות (התחלה וסיום) שמתחלפות בלופ. התמונות של האימון הקיים יושבות ב-`public/demos`, השאר נטענות מ-GitHub.
+
+## MCP (חיבור ל-Claude)
+השרת זמין ב-`/api/mcp/<MCP_SECRET>` (Streamable HTTP, stateless).
+כלים: `list_workouts`, `save_workout`, `set_workout_day`, `delete_workout`, `get_history`, `get_progress`, `log_workout`, `search_exercise_demos`.
+הסוד נמצא בנתיב, כך שהחיבור עובד כ-Custom Connector ב-claude.ai בלי OAuth. מי שיש לו את ה-URL יכול לקרוא ולשנות נתונים – לא לשתף אותו.
+להחלפת הסוד: לשנות את `MCP_SECRET` ב-Vercel, לעשות redeploy, ולעדכן את ה-URL בקונקטור.

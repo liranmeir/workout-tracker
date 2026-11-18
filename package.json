@@ -13,12 +13,14 @@
   "dependencies": {
     "@fontsource/heebo": "^5.3.0",
     "@fontsource/rubik": "^5.3.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@neondatabase/serverless": "^1.2.1",
     "drizzle-orm": "^0.45.4",
     "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
