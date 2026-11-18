@@ -47,6 +47,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     reps: e.reps,
     pair: e.pair,
     tip: e.tip,
+    mediaId: e.mediaId,
     lastWeight: prev.get(e.id) ?? null,
     suggested: prev.get(e.id) ?? e.defaultWeight,
   }));

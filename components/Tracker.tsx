@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { finishSession, reopenSession, saveWeight, toggleSet } from "@/lib/actions";
 import { fmtWeight } from "@/lib/days";
+import ExerciseDemo from "./ExerciseDemo";
 
 export type TrackerExercise = {
   id: number;
@@ -13,6 +14,7 @@ export type TrackerExercise = {
   reps: string;
   pair: string | null;
   tip: string | null;
+  mediaId: string | null;
   lastWeight: string | null;
   suggested: string | null;
 };
@@ -216,8 +218,9 @@ export default function Tracker(p: Props) {
                 }
                 return (
                   <div key={e.id} className={`card ex${full ? " full" : ""}`}>
-                    <div className="row" style={{ alignItems: "flex-start" }}>
-                      <div>
+                    <div className="ex-top">
+                      {e.mediaId && <ExerciseDemo mediaId={e.mediaId} name={e.name} />}
+                      <div className="grow">
                         <div className="ex-name">
                           {e.name}
                           {e.pair && <span className="chip">זוג {e.pair}</span>}

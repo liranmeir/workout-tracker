@@ -36,6 +36,8 @@ export const exercises = pgTable(
     pair: text("pair"),
     tip: text("tip"),
     defaultWeight: numeric("default_weight"),
+    // id in the free-exercise-db catalog, used for the demo animation
+    mediaId: text("media_id"),
     position: integer("position").notNull().default(0),
     // soft-delete so history survives edits
     archived: boolean("archived").notNull().default(false),

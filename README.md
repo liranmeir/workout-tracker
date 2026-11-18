@@ -23,3 +23,7 @@ npm run dev
 ```
 
 מיגרציות רצות אוטומטית לפני `next build`. שינוי בסכמה: לערוך `lib/schema.ts` ואז `npm run db:generate`.
+
+## הדגמות תרגילים
+התמונות מגיעות מ-[free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Public Domain).
+לכל תרגיל שתי תמונות (התחלה וסיום) שמתחלפות בלופ. התמונות של האימון הקיים יושבות ב-`public/demos`, השאר נטענות מ-GitHub.

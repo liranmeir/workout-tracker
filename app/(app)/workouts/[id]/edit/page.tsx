@@ -37,6 +37,7 @@ export default async function EditWorkout({ params }: { params: Promise<{ id: st
           pair: e.pair ?? "",
           tip: e.tip ?? "",
           defaultWeight: fmtWeight(e.defaultWeight) ?? "",
+          mediaId: e.mediaId ?? "",
         })),
       }}
     />

@@ -143,3 +143,28 @@ table.prog td.n { text-align: end; font-variant-numeric: tabular-nums; white-spa
 .login h1 { margin: 0; font-size: 28px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* exercise demo (two-frame loop) */
+.demo { position: relative; display: block; overflow: hidden; border-radius: 10px; background: #2a1414; flex: none; }
+.demo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.demo .demo-b { animation: demo-flip 1.8s steps(1, end) infinite; }
+@keyframes demo-flip { 0% { opacity: 0; } 50% { opacity: 1; } }
+.demo-sm { width: 84px; height: 56px; }
+.demo-lg { width: 120px; height: 80px; }
+.demo-xl { width: 100%; aspect-ratio: 850 / 569; }
+.demo-btn { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; }
+.ex-top { display: flex; gap: 12px; align-items: flex-start; }
+.ex-top > .grow { flex: 1; }
+.demo-overlay { position: fixed; inset: 0; z-index: 20; background: rgba(5, 10, 20, .72); display: grid; place-items: center; padding: 16px; }
+.demo-sheet { width: min(560px, 100%); background: var(--card); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+.picker { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
+.picker-list { display: grid; gap: 6px; max-height: 320px; overflow-y: auto; }
+.picker-item { display: flex; gap: 10px; align-items: center; text-align: start; padding: 6px; border-radius: 10px; border: 1px solid var(--line); background: transparent; cursor: pointer; min-height: 44px; }
+.picker-item:hover, .picker-item:focus-visible { border-color: var(--hot); }
+.media-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .demo .demo-b { animation-duration: 4s; } }
+@media (max-width: 440px) {
+  .ex-top { flex-wrap: wrap; }
+  .ex-top > .grow { min-width: calc(100% - 96px); }
+  .ex-top > :last-child:not(.grow):not(.demo-btn) { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+}

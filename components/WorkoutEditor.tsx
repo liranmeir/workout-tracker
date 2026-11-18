@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { archiveWorkout, saveWorkout, type ExerciseInput, type WorkoutInput } from "@/lib/actions";
 import { DAYS, SECTIONS } from "@/lib/days";
+import MediaPicker from "./MediaPicker";
 
 const blank = (section = "חלק עיקרי"): ExerciseInput => ({
-  section, name: "", kind: "sets", sets: 3, reps: "10", pair: "", tip: "", defaultWeight: "",
+  section, name: "", kind: "sets", sets: 3, reps: "10", pair: "", tip: "", defaultWeight: "", mediaId: "",
 });
 
 export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
@@ -120,6 +121,7 @@ export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
             טיפ
             <input value={e.tip} onChange={(ev) => setEx(i, { tip: ev.target.value })} />
           </label>
+          {e.kind === "sets" && <MediaPicker value={e.mediaId} onChange={(mediaId) => setEx(i, { mediaId })} />}
         </div>
       ))}
       <button type="button" className="btn" onClick={add}>+ הוסף תרגיל</button>

@@ -1,0 +1,1 @@
+ALTER TABLE "exercises" ADD COLUMN "media_id" text;

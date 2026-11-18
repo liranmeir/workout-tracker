@@ -100,6 +100,7 @@ export type ExerciseInput = {
   pair: string;
   tip: string;
   defaultWeight: string;
+  mediaId: string;
 };
 
 export type WorkoutInput = {
@@ -143,6 +144,7 @@ export async function saveWorkout(input: WorkoutInput) {
       pair: orNull(e.pair),
       tip: orNull(e.tip),
       defaultWeight: w && Number.isFinite(Number(w)) ? w : null,
+      mediaId: /^[\w.()'-]+$/.test(clean(e.mediaId)) ? clean(e.mediaId) : null,
       position: i,
       archived: false,
     };
