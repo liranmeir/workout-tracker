@@ -17,8 +17,8 @@ export default async function History() {
       startedAt: sessions.startedAt,
       finishedAt: sessions.finishedAt,
       name: workouts.name,
-      done: sql<number>`(select count(*)::int from ${setLogs} l where l.session_id = ${sessions.id})`,
-      total: sql<number>`(select coalesce(sum(case when e.kind = 'check' then 1 else e.sets end), 0)::int from ${exercises} e where e.workout_id = ${sessions.workoutId} and not e.archived)`,
+      done: sql<number>`(select count(*)::int from ${setLogs} l where l.session_id = "sessions"."id")`,
+      total: sql<number>`(select coalesce(sum(case when e.kind = 'check' then 1 else e.sets end), 0)::int from ${exercises} e where e.workout_id = "sessions"."workout_id" and not e.archived)`,
     })
     .from(sessions)
     .innerJoin(workouts, eq(workouts.id, sessions.workoutId))

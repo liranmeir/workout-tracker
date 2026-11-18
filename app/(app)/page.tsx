@@ -16,9 +16,9 @@ export default async function Home() {
       name: workouts.name,
       dayOfWeek: workouts.dayOfWeek,
       note: workouts.note,
-      count: sql<number>`(select count(*)::int from ${exercises} e where e.workout_id = ${workouts.id} and not e.archived)`,
-      last: sql<string | null>`(select max(s.started_at) from ${sessions} s where s.workout_id = ${workouts.id} and s.finished_at is not null)`,
-      openId: sql<number | null>`(select s.id from ${sessions} s where s.workout_id = ${workouts.id} and s.finished_at is null and s.started_at > now() - interval '12 hours' order by s.started_at desc limit 1)`,
+      count: sql<number>`(select count(*)::int from ${exercises} e where e.workout_id = "workouts"."id" and not e.archived)`,
+      last: sql<string | null>`(select max(s.started_at) from ${sessions} s where s.workout_id = "workouts"."id" and s.finished_at is not null)`,
+      openId: sql<number | null>`(select s.id from ${sessions} s where s.workout_id = "workouts"."id" and s.finished_at is null and s.started_at > now() - interval '12 hours' order by s.started_at desc limit 1)`,
     })
     .from(workouts)
     .where(eq(workouts.archived, false))
