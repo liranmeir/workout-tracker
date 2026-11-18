@@ -6,3 +6,7 @@
 - Run `npm test` (single run) or `npm run test:watch` while developing. Run `npm test` and `npm run typecheck` before committing.
 - Prefer testing pure logic (formatting, validation, input cleaning). For code that touches the DB, mock `lib/db` with `vi.mock` instead of hitting a real database.
 - `npm run build` runs the tests first, so a failing test fails the Vercel deployment. Never skip, disable or delete a test just to get green.
+
+## Workflow
+- Never push to `main`. Work on a branch and open a pull request; `main` only changes through merged PRs.
+- The Vercel preview build runs `npm test`, so check that the PR's deployment is green before merging.
