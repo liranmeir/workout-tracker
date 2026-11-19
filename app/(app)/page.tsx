@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { exercises, sessions, workouts } from "@/lib/schema";
 import { requireAuth } from "@/lib/auth";
 import { startSession } from "@/lib/actions";
+import { nextTag, startLabel } from "@/lib/labels";
 import { dayName, dayWithDate, planUpcoming, shortDate } from "@/lib/days";
 
 export const dynamic = "force-dynamic";
@@ -45,24 +46,24 @@ export default async function Home() {
         const isNext = w.id === nextId;
         return (
           <div key={w.id} className={`card${isNext ? " next" : ""}`}>
-            {isNext && <div className="next-tag">{w.openId ? "אימון בעיצומו" : "האימון הבא"}</div>}
+            {isNext && <div className="next-tag">{nextTag(!!w.openId)}</div>}
             <div className="row">
               <h2 className="w-name">{w.name}</h2>
-              <span className={`when${offset === 0 ? " today" : ""}`}>
-                {w.dayOfWeek == null || offset == null ? dayName(null) : dayWithDate(w.dayOfWeek, offset, now)}
-              </span>
+              <Link href={`/workouts/${w.id}/edit`} className="btn ghost small" aria-label={`עריכת ${w.name}`}>
+                ✎ עריכה
+              </Link>
+            </div>
+            <div className={`when${offset === 0 ? " today" : ""}`}>
+              {w.dayOfWeek == null || offset == null ? dayName(null) : dayWithDate(w.dayOfWeek, offset, now)}
             </div>
             <div className="meta">
               {w.count} תרגילים
               {w.last ? ` · אחרון: ${shortDate(new Date(w.last))}` : " · עוד לא בוצע"}
             </div>
             {w.note && <div className="tip">{w.note}</div>}
-            <div className="w-actions">
-              <form action={startSession.bind(null, w.id)}>
-                <button className="btn primary">{w.openId ? "המשך אימון" : "התחל אימון"}</button>
-              </form>
-              <Link href={`/workouts/${w.id}/edit`} className="btn">עריכה</Link>
-            </div>
+            <form action={startSession.bind(null, w.id)} className="w-actions">
+              <button className={`btn primary start${isNext ? " big" : ""}`}>{startLabel(!!w.openId)}</button>
+            </form>
           </div>
         );
       })}

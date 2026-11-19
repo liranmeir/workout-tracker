@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { archiveWorkout, saveWorkout, type ExerciseInput, type WorkoutInput } from "@/lib/actions";
 import { DAYS, SECTIONS } from "@/lib/days";
@@ -39,6 +40,7 @@ export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
 
   return (
     <main className="page">
+      <Link href="/" className="back">→ חזרה לאימונים</Link>
       <h1 className="page-title">{initial?.id ? "עריכת אימון" : "אימון חדש"}</h1>
       <div className="card stack">
         <div className="grid2">
@@ -128,6 +130,7 @@ export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
 
       <div className="sticky-save">
         <button className="btn primary" onClick={save} disabled={pending}>{pending ? "שומר…" : "שמירה"}</button>
+        <Link href="/" className="btn">ביטול</Link>
         {initial?.id && (
           <button
             className={`btn ${confirmDel ? "danger" : ""}`}
