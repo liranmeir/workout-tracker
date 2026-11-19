@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { exercises, sessions, workouts } from "@/lib/schema";
 import { requireAuth } from "@/lib/auth";
 import { startSession } from "@/lib/actions";
-import { dayName, shortDate, todayIndex } from "@/lib/days";
+import { nextTag, startLabel } from "@/lib/labels";
+import { dayName, dayWithDate, planUpcoming, shortDate } from "@/lib/days";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,8 @@ export default async function Home() {
     .where(eq(workouts.archived, false))
     .orderBy(sql`${workouts.dayOfWeek} is null`, asc(workouts.dayOfWeek), asc(workouts.id));
 
-  const today = todayIndex();
+  const now = new Date();
+  const { items, nextId } = planUpcoming(list, now);
 
   return (
     <main className="page">
@@ -32,7 +34,7 @@ export default async function Home() {
         <h1 className="page-title">האימונים שלי</h1>
         <Link href="/workouts/new" className="btn dark">+ אימון חדש</Link>
       </div>
-      <p className="sub">בחר אימון כדי להתחיל. סימון סטים ומשקלים נשמרים מיד.</p>
+      <p className="sub">האימון הבא מסומן למעלה. סימון סטים ומשקלים נשמרים מיד.</p>
 
       {list.length === 0 && (
         <div className="card empty">
@@ -40,28 +42,31 @@ export default async function Home() {
         </div>
       )}
 
-      {list.map((w) => (
-        <div key={w.id} className="card">
-          <div className="row">
-            <h2 className="w-name">
-              {w.name}
-              {w.dayOfWeek === today && <span className="chip">היום</span>}
-            </h2>
-            <span className="meta">{dayName(w.dayOfWeek)}</span>
-          </div>
-          <div className="meta">
-            {w.count} תרגילים
-            {w.last ? ` · אחרון: ${shortDate(new Date(w.last))}` : " · עוד לא בוצע"}
-          </div>
-          {w.note && <div className="tip">{w.note}</div>}
-          <div className="w-actions">
-            <form action={startSession.bind(null, w.id)}>
-              <button className="btn primary">{w.openId ? "המשך אימון" : "התחל אימון"}</button>
+      {items.map(({ w, offset }) => {
+        const isNext = w.id === nextId;
+        return (
+          <div key={w.id} className={`card${isNext ? " next" : ""}`}>
+            {isNext && <div className="next-tag">{nextTag(!!w.openId)}</div>}
+            <div className="row">
+              <h2 className="w-name">{w.name}</h2>
+              <Link href={`/workouts/${w.id}/edit`} className="btn ghost small" aria-label={`עריכת ${w.name}`}>
+                ✎ עריכה
+              </Link>
+            </div>
+            <div className={`when${offset === 0 ? " today" : ""}`}>
+              {w.dayOfWeek == null || offset == null ? dayName(null) : dayWithDate(w.dayOfWeek, offset, now)}
+            </div>
+            <div className="meta">
+              {w.count} תרגילים
+              {w.last ? ` · אחרון: ${shortDate(new Date(w.last))}` : " · עוד לא בוצע"}
+            </div>
+            {w.note && <div className="tip">{w.note}</div>}
+            <form action={startSession.bind(null, w.id)} className="w-actions">
+              <button className={`btn primary start${isNext ? " big" : ""}`}>{startLabel(!!w.openId)}</button>
             </form>
-            <Link href={`/workouts/${w.id}/edit`} className="btn">עריכה</Link>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </main>
   );
 }

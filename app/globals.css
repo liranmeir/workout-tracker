@@ -35,13 +35,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   gap: 6px;
   padding: 10px max(4vw, 14px);
   padding-top: max(10px, env(safe-area-inset-top));
+  position: sticky; top: 0; z-index: 20;
 }
 .nav .brand { font: 800 19px var(--font-head); margin-inline-end: auto; text-decoration: none; }
 .nav a.tab, .nav button.tab {
   min-height: 40px; padding: 0 12px; display: inline-flex; align-items: center;
   border-radius: 10px; text-decoration: none; color: #c4d0e6; background: none; border: 0; cursor: pointer;
 }
-.nav a.tab[aria-current="page"] { color: #fff; background: var(--iron2); }
+.nav a.tab[aria-current="page"] { color: #fff; background: var(--iron2); font-weight: 700; box-shadow: inset 0 -3px 0 var(--hot); }
+.nav a.tab { gap: 5px; }
+.nav button.tab.out { font-size: 14px; opacity: .8; }
 
 main.page { max-width: 720px; margin: 0 auto; padding: 18px max(4vw, 14px) 48px; }
 .page-title { font-size: clamp(26px, 6vw, 34px); line-height: 1.1; margin: 4px 0 4px; text-wrap: balance; }
@@ -68,7 +71,16 @@ main.page { max-width: 720px; margin: 0 auto; padding: 18px max(4vw, 14px) 48px;
 
 /* workouts list */
 .w-name { font: 700 19px var(--font-head); margin: 0; }
-.w-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.card.next { border: 2px solid var(--hot); box-shadow: 0 6px 20px rgba(255, 90, 60, .18); }
+.next-tag { display: inline-block; background: var(--hot); color: #fff; font: 700 13px var(--font-head); border-radius: 6px; padding: 2px 10px; margin-bottom: 8px; }
+.when { font-weight: 700; font-size: 15px; color: var(--ink); margin: 2px 0 4px; }
+.when.today { color: var(--hot); }
+.w-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn.start { flex: 1; min-height: 50px; font-size: 17px; }
+.btn.start.big { min-height: 58px; font-size: 19px; box-shadow: 0 4px 14px rgba(255, 90, 60, .35); }
+.btn.ghost { border-color: transparent; color: var(--mute); }
+.btn.ghost:hover { color: var(--ink); background: var(--line); }
+.back { display: inline-flex; align-items: center; min-height: 44px; color: var(--mute); text-decoration: none; font-weight: 500; }
 
 /* tracker */
 .hero { background: var(--iron); color: #fff; padding: 18px max(4vw, 14px) 16px; }
