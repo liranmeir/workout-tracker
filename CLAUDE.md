@@ -10,3 +10,8 @@
 ## Workflow
 - Never push to `main`. Work on a branch and open a pull request; `main` only changes through merged PRs.
 - The Vercel preview build runs `npm test`, so check that the PR's deployment is green before merging.
+
+## Pull requests with UI changes
+- Every PR that changes what the user sees must include **before and after screenshots** in its description (mobile width, ~430px, dark mode).
+- Commit the images under `docs/pr/` on the PR branch and link them with `https://github.com/<owner>/<repo>/blob/<branch>/docs/pr/<file>.png?raw=true`. Remove `docs/pr/` before or when merging.
+- If the app can't run (no database), render a static page with the real CSS/fonts and say so in the PR.
