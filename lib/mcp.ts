@@ -23,7 +23,7 @@ const exerciseSchema = z.object({
   sets: z.number().int().min(1).max(12).optional(),
   reps: z.string().optional().describe("Reps or time, e.g. '8–10', '40 שנ׳', '10 לכל צד'"),
   pair: z.string().optional().describe("Superset letter (A/B/C). Two consecutive exercises with the same letter are done alternately."),
-  tip: z.string().optional(),
+  tip: z.string().optional().describe("Short cues, one per line (shown behind a \"דגשים\" button)"),
   default_weight: z.number().min(0).optional().describe("Starting weight in kg"),
   media_id: z.string().optional().describe("Demo id from search_exercise_demos"),
 });

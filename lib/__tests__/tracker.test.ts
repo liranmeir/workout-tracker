@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtClock, progress } from "../tracker";
+import { fmtClock, parseCues, progress } from "../tracker";
 
 describe("fmtClock", () => {
   it("formats minutes and zero-padded seconds", () => {
@@ -27,5 +27,20 @@ describe("progress", () => {
   });
   it("handles an empty plan", () => {
     expect(progress([], new Set())).toEqual({ count: 0, total: 0, pct: 0 });
+  });
+});
+
+describe("parseCues", () => {
+  it("splits on new lines and semicolons and trims", () => {
+    expect(parseCues("  גב ישר \nירידה איטית;  נושפים בדחיפה ")).toEqual(["גב ישר", "ירידה איטית", "נושפים בדחיפה"]);
+  });
+  it("keeps commas inside a cue", () => {
+    expect(parseCues("חזה פתוח, מושכים לבטן")).toEqual(["חזה פתוח, מושכים לבטן"]);
+  });
+  it("drops blank lines and handles empty tips", () => {
+    expect(parseCues("א\n\n \nב")).toEqual(["א", "ב"]);
+    expect(parseCues("")).toEqual([]);
+    expect(parseCues(null)).toEqual([]);
+    expect(parseCues(undefined)).toEqual([]);
   });
 });
