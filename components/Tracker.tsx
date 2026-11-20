@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { finishSession, reopenSession, restartTimer, saveWeight, toggleSet } from "@/lib/actions";
 import { fmtWeight } from "@/lib/days";
+import { fmtClock as fmt, parseCues, progress } from "@/lib/tracker";
 import ExerciseDemo from "./ExerciseDemo";
 
 export type TrackerExercise = {
@@ -30,8 +31,6 @@ type Props = {
   initialWeights: Record<string, string>;
 };
 
-const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
 export default function Tracker(p: Props) {
   const [done, setDone] = useState(() => new Set(p.initialDone));
   const [weights, setWeights] = useState<Record<string, string>>(() =>
@@ -52,8 +51,18 @@ export default function Tracker(p: Props) {
     () => p.exercises.flatMap((e) => Array.from({ length: e.kind === "check" ? 1 : e.sets }, (_, i) => `${e.id}-${i}`)),
     [p.exercises],
   );
-  const doneCount = keys.filter((k) => done.has(k)).length;
-  const pct = keys.length ? Math.round((doneCount / keys.length) * 100) : 0;
+  const { count: doneCount, pct } = progress(keys, done);
+
+  // The sticky bar sits right under the (also sticky) top nav.
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>(".nav");
+    if (!nav) return;
+    const set = () => document.documentElement.style.setProperty("--nav-h", `${nav.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
 
   /* elapsed */
   const [now, setNow] = useState(() => Date.now());
@@ -164,6 +173,13 @@ export default function Tracker(p: Props) {
   };
 
   const pairNote = p.exercises.some((e) => e.pair);
+  const [openCues, setOpenCues] = useState<Set<number>>(() => new Set());
+  const toggleCues = (id: number) =>
+    setOpenCues((o) => {
+      const n = new Set(o);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
 
   return (
     <>
@@ -174,6 +190,11 @@ export default function Tracker(p: Props) {
           <div className="plates" aria-hidden="true">
             {keys.map((k, i) => <i key={k} className={`plate${i < doneCount ? " on" : ""}`} />)}
           </div>
+        </div>
+      </header>
+
+      <div className="timer" role="region" aria-label="התקדמות וטיימר מנוחה">
+        <div className="timer-in">
           <div className="stats">
             <span><b>{pct}%</b>הושלם</span>
             <span><b>{doneCount}/{keys.length}</b>סטים</span>
@@ -186,17 +207,15 @@ export default function Tracker(p: Props) {
               )}
             </span>
           </div>
-        </div>
-      </header>
-
-      <div className="timer" role="region" aria-label="טיימר מנוחה">
-        <div className="timer-in">
-          <span className="lbl">מנוחה</span>
-          {[60, 90, 120].map((s) => (
-            <button key={s} className="tbtn" onClick={() => startRest(s)}>{s}</button>
-          ))}
-          <button className="tbtn" onClick={() => startRest(0)} aria-label="עצור טיימר">✕</button>
-          <span className={`clock${restLeft ? " run" : ""}`} aria-live="polite">{fmt(restLeft)}</span>
+          <div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+          <div className="rest">
+            <span className="lbl">מנוחה</span>
+            {[60, 90, 120].map((s) => (
+              <button key={s} className="tbtn" onClick={() => startRest(s)}>{s}</button>
+            ))}
+            <button className="tbtn" onClick={() => startRest(0)} aria-label="עצור טיימר">✕</button>
+            <span className={`clock${restLeft ? " run" : ""}`} aria-live="polite">{fmt(restLeft)}</span>
+          </div>
         </div>
       </div>
 
@@ -261,7 +280,23 @@ export default function Tracker(p: Props) {
                         {e.lastWeight && <div className="prev">פעם קודמת: {fmtWeight(e.lastWeight)}</div>}
                       </div>
                     </div>
-                    {e.tip && <div className="tip">{e.tip}</div>}
+                    {parseCues(e.tip).length > 0 && (
+                      <>
+                        <button
+                          className={`cues-btn${openCues.has(e.id) ? " on" : ""}`}
+                          aria-expanded={openCues.has(e.id)}
+                          aria-controls={`cues-${e.id}`}
+                          onClick={() => toggleCues(e.id)}
+                        >
+                          💡 דגשים {openCues.has(e.id) ? "▴" : "▾"}
+                        </button>
+                        {openCues.has(e.id) && (
+                          <ul className="cues" id={`cues-${e.id}`}>
+                            {parseCues(e.tip).map((c) => <li key={c}>{c}</li>)}
+                          </ul>
+                        )}
+                      </>
+                    )}
                     <div className="sets">
                       {Array.from({ length: e.sets }, (_, i) => {
                         const on = done.has(`${e.id}-${i}`);

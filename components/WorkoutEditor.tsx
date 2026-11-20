@@ -214,8 +214,8 @@ export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
                   </div>
 
                   <label className="f">
-                    טיפ (אופציונלי)
-                    <input value={e.tip} onChange={(ev) => setEx(r.key, { tip: ev.target.value })} />
+                    דגשים (אופציונלי – דגש בכל שורה)
+                    <textarea rows={3} value={e.tip} onChange={(ev) => setEx(r.key, { tip: ev.target.value })} />
                   </label>
                   {e.kind === "sets" && <MediaPicker value={e.mediaId} onChange={(mediaId) => setEx(r.key, { mediaId })} />}
 
