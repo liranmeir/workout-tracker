@@ -28,11 +28,11 @@ const exerciseSchema = z.object({
   media_id: z.string().optional().describe("Demo id from search_exercise_demos"),
 });
 
-async function loadWorkouts(ids?: number[]) {
+async function loadWorkouts(userId: number, ids?: number[]) {
   const ws = await db()
     .select()
     .from(workouts)
-    .where(ids ? inArray(workouts.id, ids) : eq(workouts.archived, false))
+    .where(and(eq(workouts.userId, userId), ids ? inArray(workouts.id, ids) : eq(workouts.archived, false)))
     .orderBy(sql`${workouts.dayOfWeek} is null`, asc(workouts.dayOfWeek), asc(workouts.id));
   if (!ws.length) return [];
   const exs = await db()
@@ -63,7 +63,11 @@ async function loadWorkouts(ids?: number[]) {
   }));
 }
 
-export function buildMcpServer() {
+export type McpUser = { id: number; name: string };
+
+/** An MCP server scoped to one user: every tool reads and writes only that user's data. */
+export function buildMcpServer(user: McpUser) {
+  const userId = user.id;
   const server = new McpServer({ name: "workout-tracker", version: "1.0.0" });
 
   server.registerTool(
@@ -71,11 +75,11 @@ export function buildMcpServer() {
     {
       title: "List workouts",
       description:
-        "List Liran's workout plans (the weekly schedule): each workout's id, name, weekday (0=Sunday … 6=Saturday, null = no fixed day), note and full exercise list. Call this before editing a workout.",
+        `List ${user.name}'s workout plans (the weekly schedule): each workout's id, name, weekday (0=Sunday … 6=Saturday, null = no fixed day), note and full exercise list. Call this before editing a workout.`,
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
-    async () => json(await loadWorkouts()),
+    async () => json(await loadWorkouts(userId)),
   );
 
   server.registerTool(
@@ -93,7 +97,8 @@ export function buildMcpServer() {
       },
     },
     async (a) => {
-      const res = await upsertWorkout({
+      const res = await upsertWorkout(
+        {
         id: a.id,
         name: a.name,
         dayOfWeek: a.day_of_week ?? null,
@@ -110,9 +115,11 @@ export function buildMcpServer() {
           defaultWeight: e.default_weight == null ? "" : String(e.default_weight),
           mediaId: e.media_id ?? "",
         })),
-      });
+        },
+        userId,
+      );
       if ("error" in res) return fail(res.error);
-      return json({ saved: true, workout: (await loadWorkouts([res.id]))[0] });
+      return json({ saved: true, workout: (await loadWorkouts(userId, [res.id]))[0] });
     },
   );
 
@@ -128,7 +135,7 @@ export function buildMcpServer() {
       annotations: { idempotentHint: true },
     },
     async ({ workout_id, day_of_week }) => {
-      const r = await db().update(workouts).set({ dayOfWeek: day_of_week }).where(eq(workouts.id, workout_id)).returning({ id: workouts.id });
+      const r = await db().update(workouts).set({ dayOfWeek: day_of_week }).where(and(eq(workouts.id, workout_id), eq(workouts.userId, userId))).returning({ id: workouts.id });
       if (!r.length) return fail(`workout ${workout_id} not found`);
       return json({ workout_id, day_of_week, day: dayLabel(day_of_week) });
     },
@@ -143,7 +150,7 @@ export function buildMcpServer() {
       annotations: { destructiveHint: true },
     },
     async ({ workout_id }) => {
-      const r = await db().update(workouts).set({ archived: true }).where(eq(workouts.id, workout_id)).returning({ name: workouts.name });
+      const r = await db().update(workouts).set({ archived: true }).where(and(eq(workouts.id, workout_id), eq(workouts.userId, userId))).returning({ name: workouts.name });
       if (!r.length) return fail(`workout ${workout_id} not found`);
       return json({ deleted: r[0].name });
     },
@@ -154,7 +161,7 @@ export function buildMcpServer() {
     {
       title: "Workout history",
       description:
-        "Sessions Liran actually did, newest first: date (Israel time), duration, completion, and per exercise the sets done and the weight used.",
+        `Sessions ${user.name} actually did, newest first: date (Israel time), duration, completion, and per exercise the sets done and the weight used.`,
       inputSchema: {
         days: z.number().int().min(1).max(730).optional().describe("Look-back window in days (default 30)"),
         workout_id: z.number().int().optional(),
@@ -167,7 +174,7 @@ export function buildMcpServer() {
         .select({ id: sessions.id, workoutId: sessions.workoutId, startedAt: sessions.startedAt, finishedAt: sessions.finishedAt, name: workouts.name })
         .from(sessions)
         .innerJoin(workouts, eq(workouts.id, sessions.workoutId))
-        .where(and(gte(sessions.startedAt, since), workout_id ? eq(sessions.workoutId, workout_id) : undefined))
+        .where(and(eq(workouts.userId, userId), gte(sessions.startedAt, since), workout_id ? eq(sessions.workoutId, workout_id) : undefined))
         .orderBy(desc(sessions.startedAt));
       if (!ss.length) return json({ days, sessions: [] });
 
@@ -220,7 +227,8 @@ export function buildMcpServer() {
         .from(weightLogs)
         .innerJoin(exercises, eq(exercises.id, weightLogs.exerciseId))
         .innerJoin(sessions, eq(sessions.id, weightLogs.sessionId))
-        .where(exercise ? sql`${exercises.name} ilike ${"%" + exercise + "%"}` : undefined)
+        .innerJoin(workouts, eq(workouts.id, sessions.workoutId))
+        .where(and(eq(workouts.userId, userId), exercise ? sql`${exercises.name} ilike ${"%" + exercise + "%"}` : undefined))
         .orderBy(asc(sessions.startedAt));
       const by = new Map<string, { date: string; weight_kg: number }[]>();
       for (const r of rows) by.set(r.name, [...(by.get(r.name) ?? []), { date: fmtDate(r.at).slice(0, 10), weight_kg: Number(r.weight) }]);
@@ -245,7 +253,7 @@ export function buildMcpServer() {
       },
     },
     async (a) => {
-      const [plan] = await loadWorkouts([a.workout_id]);
+      const [plan] = await loadWorkouts(userId, [a.workout_id]);
       if (!plan) return fail(`workout ${a.workout_id} not found`);
       const start = a.date ? new Date(a.date) : new Date();
       if (Number.isNaN(start.getTime())) return fail("invalid date");

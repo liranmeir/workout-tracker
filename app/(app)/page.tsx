@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { exercises, sessions, workouts } from "@/lib/schema";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { startSession } from "@/lib/actions";
 import { nextTag, startLabel } from "@/lib/labels";
 import { dayName, dayWithDate, planUpcoming, shortDate } from "@/lib/days";
@@ -10,7 +10,7 @@ import { dayName, dayWithDate, planUpcoming, shortDate } from "@/lib/days";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  await requireAuth();
+  const userId = await requireUser();
   const list = await db()
     .select({
       id: workouts.id,
@@ -22,7 +22,7 @@ export default async function Home() {
       openId: sql<number | null>`(select s.id from ${sessions} s where s.workout_id = "workouts"."id" and s.finished_at is null and s.started_at > now() - interval '12 hours' order by s.started_at desc limit 1)`,
     })
     .from(workouts)
-    .where(eq(workouts.archived, false))
+    .where(and(eq(workouts.userId, userId), eq(workouts.archived, false)))
     .orderBy(sql`${workouts.dayOfWeek} is null`, asc(workouts.dayOfWeek), asc(workouts.id));
 
   const now = new Date();

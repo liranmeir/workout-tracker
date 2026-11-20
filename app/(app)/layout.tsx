@@ -1,8 +1,8 @@
 import Nav from "@/components/Nav";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  await requireAuth();
+  await requireUser();
   return (
     <>
       <Nav />

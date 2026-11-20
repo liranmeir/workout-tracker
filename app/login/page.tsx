@@ -10,8 +10,12 @@ export default function LoginPage() {
       <form action={action}>
         <h1>יומן אימונים</h1>
         <label className="f">
+          שם משתמש
+          <input name="username" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} dir="ltr" required autoFocus />
+        </label>
+        <label className="f">
           סיסמה
-          <input name="password" type="password" autoComplete="current-password" required autoFocus />
+          <input name="password" type="password" autoComplete="current-password" required />
         </label>
         {state?.error && <p className="error">{state.error}</p>}
         <button className="btn primary" disabled={pending}>

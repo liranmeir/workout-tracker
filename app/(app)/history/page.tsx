@@ -2,7 +2,7 @@ import Link from "next/link";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { exercises, sessions, setLogs, weightLogs, workouts } from "@/lib/schema";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { deleteSession } from "@/lib/actions";
 import { duration, fmtWeight, shortDate } from "@/lib/days";
 import ConfirmButton from "@/components/ConfirmButton";
@@ -10,7 +10,7 @@ import ConfirmButton from "@/components/ConfirmButton";
 export const dynamic = "force-dynamic";
 
 export default async function History() {
-  await requireAuth();
+  const userId = await requireUser();
   const list = await db()
     .select({
       id: sessions.id,
@@ -22,6 +22,7 @@ export default async function History() {
     })
     .from(sessions)
     .innerJoin(workouts, eq(workouts.id, sessions.workoutId))
+    .where(eq(workouts.userId, userId))
     .orderBy(desc(sessions.startedAt))
     .limit(60);
 
@@ -31,6 +32,8 @@ export default async function History() {
     .from(weightLogs)
     .innerJoin(exercises, eq(exercises.id, weightLogs.exerciseId))
     .innerJoin(sessions, eq(sessions.id, weightLogs.sessionId))
+    .innerJoin(workouts, eq(workouts.id, sessions.workoutId))
+    .where(eq(workouts.userId, userId))
     .orderBy(asc(sessions.startedAt));
   const byEx = new Map<number, { name: string; vals: number[] }>();
   for (const r of prog) {

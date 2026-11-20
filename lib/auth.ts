@@ -1,35 +1,46 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { users } from "./schema";
+import { normalizeUsername, passwordOk, safeEqual } from "./users";
 
 const COOKIE = "wt_auth";
 
-function token() {
+function sign(userId: number) {
   const secret = process.env.AUTH_SECRET;
   if (!secret) throw new Error("AUTH_SECRET is not set");
-  return createHmac("sha256", secret).update("workout-tracker:v1").digest("hex");
+  return createHmac("sha256", secret).update(`workout-tracker:v2:${userId}`).digest("hex");
 }
 
-function safeEqual(a: string, b: string) {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ab.length === bb.length && timingSafeEqual(ab, bb);
+/** The logged-in user's id, or null. Cookie format: "<userId>.<hmac>". */
+export async function currentUserId(): Promise<number | null> {
+  const value = (await cookies()).get(COOKIE)?.value;
+  const m = value?.match(/^(\d+)\.([0-9a-f]+)$/);
+  if (!m) return null;
+  const id = Number(m[1]);
+  return safeEqual(m[2], sign(id)) ? id : null;
 }
 
 export async function isAuthed() {
-  const value = (await cookies()).get(COOKIE)?.value;
-  return !!value && safeEqual(value, token());
+  return (await currentUserId()) != null;
 }
 
-export async function requireAuth() {
-  if (!(await isAuthed())) redirect("/login");
+/** Returns the logged-in user's id, or redirects to /login. */
+export async function requireUser(): Promise<number> {
+  const id = await currentUserId();
+  if (id == null) redirect("/login");
+  return id;
 }
 
-export async function signIn(password: string) {
-  const expected = process.env.APP_PASSWORD;
-  if (!expected || !safeEqual(password, expected)) return false;
-  (await cookies()).set(COOKIE, token(), {
+export async function signIn(username: string, password: string) {
+  const u = normalizeUsername(username);
+  if (!u || !passwordOk(u, password)) return false;
+  const [user] = await db().select({ id: users.id }).from(users).where(eq(users.username, u));
+  if (!user) return false;
+  (await cookies()).set(COOKIE, `${user.id}.${sign(user.id)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

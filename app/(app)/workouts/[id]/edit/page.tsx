@@ -2,17 +2,17 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { exercises, workouts } from "@/lib/schema";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import WorkoutEditor from "@/components/WorkoutEditor";
 import { fmtWeight } from "@/lib/days";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditWorkout({ params }: { params: Promise<{ id: string }> }) {
-  await requireAuth();
+  const userId = await requireUser();
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
-  const [w] = await db().select().from(workouts).where(eq(workouts.id, id));
+  const [w] = await db().select().from(workouts).where(and(eq(workouts.id, id), eq(workouts.userId, userId)));
   if (!w || w.archived) notFound();
   const exs = await db()
     .select()

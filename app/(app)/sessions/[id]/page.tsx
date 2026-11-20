@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { exercises, sessions, setLogs, weightLogs, workouts } from "@/lib/schema";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import Tracker, { type TrackerExercise } from "@/components/Tracker";
 
 export const dynamic = "force-dynamic";
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAuth();
+  const userId = await requireUser();
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
 
@@ -16,7 +16,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     .select({ id: sessions.id, startedAt: sessions.startedAt, finishedAt: sessions.finishedAt, workoutId: sessions.workoutId, name: workouts.name, note: workouts.note })
     .from(sessions)
     .innerJoin(workouts, eq(workouts.id, sessions.workoutId))
-    .where(eq(sessions.id, id));
+    .where(and(eq(sessions.id, id), eq(workouts.userId, userId)));
   if (!s) notFound();
 
   const [exs, done, weights] = await Promise.all([
