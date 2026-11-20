@@ -107,6 +107,11 @@ main.page { max-width: 720px; margin: 0 auto; padding: 18px max(4vw, 14px) 48px;
 .tbtn { min-height: 42px; min-width: 52px; padding: 0 12px; border-radius: 12px; border: 1.5px solid #5d79a8; background: transparent; color: #fff; font: 700 16px var(--font-head); cursor: pointer; }
 .clock { font: 800 28px var(--font-head); margin-inline-start: auto; font-variant-numeric: tabular-nums; }
 .clock.run { color: var(--hot); }
+.clock.work { color: #4ade80; }
+.rest.work .lbl { color: #fff; font-weight: 700; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rest.work .side { color: #c4d0e6; font-weight: 400; }
+.go { margin-top: 10px; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1.5px solid #4ade80; background: transparent; color: light-dark(#15803d, #4ade80); font: 700 15px var(--font-head); cursor: pointer; }
+.go.on { background: #4ade80; color: #0b1220; }
 .sec-h { font-size: 19px; margin: 22px 0 10px; }
 .ex.full { opacity: .62; }
 .ex-name { font-weight: 700; font-size: 17px; line-height: 1.3; }
