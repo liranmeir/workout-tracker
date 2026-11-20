@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { finishSession, reopenSession, saveWeight, toggleSet } from "@/lib/actions";
+import { finishSession, reopenSession, restartTimer, saveWeight, toggleSet } from "@/lib/actions";
 import { fmtWeight } from "@/lib/days";
 import ExerciseDemo from "./ExerciseDemo";
 
@@ -61,7 +61,20 @@ export default function Tracker(p: Props) {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const elapsed = Math.max(0, Math.floor((now - new Date(p.startedAt).getTime()) / 1000));
+  const [startedAt, setStartedAt] = useState(p.startedAt);
+  useEffect(() => setStartedAt(p.startedAt), [p.startedAt]);
+  const elapsed = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  const [resetArmed, setResetArmed] = useState(false);
+  const resetClock = () => {
+    if (!resetArmed) {
+      setResetArmed(true);
+      setTimeout(() => setResetArmed(false), 3000);
+      return;
+    }
+    setResetArmed(false);
+    setStartedAt(new Date().toISOString());
+    run(() => restartTimer(p.sessionId));
+  };
 
   /* rest timer */
   const [restEnd, setRestEnd] = useState(0);
@@ -164,7 +177,14 @@ export default function Tracker(p: Props) {
           <div className="stats">
             <span><b>{pct}%</b>הושלם</span>
             <span><b>{doneCount}/{keys.length}</b>סטים</span>
-            <span><b>{fmt(elapsed)}</b>זמן אימון</span>
+            <span>
+              <b>{fmt(elapsed)}</b>זמן אימון
+              {!p.finished && (
+                <button className={`reset${resetArmed ? " armed" : ""}`} onClick={resetClock} aria-label="אפס את זמן האימון">
+                  {resetArmed ? "לאפס?" : "↺ אפס"}
+                </button>
+              )}
+            </span>
           </div>
         </div>
       </header>

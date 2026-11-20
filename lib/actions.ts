@@ -7,6 +7,7 @@ import { db } from "./db";
 import { sessions, setLogs, weightLogs, workouts } from "./schema";
 import { requireAuth, signIn, signOut } from "./auth";
 import { upsertWorkout, type WorkoutInput } from "./workouts";
+import { restartSessionClock } from "./sessions";
 
 /* ---------- auth ---------- */
 
@@ -74,6 +75,13 @@ export async function finishSession(sessionId: number) {
   revalidatePath("/");
   revalidatePath("/history");
   redirect("/history");
+}
+
+export async function restartTimer(sessionId: number) {
+  await requireAuth();
+  const res = await restartSessionClock(sessionId);
+  revalidatePath(`/sessions/${sessionId}`);
+  return res;
 }
 
 export async function reopenSession(sessionId: number) {
