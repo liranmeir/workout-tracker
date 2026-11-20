@@ -8,17 +8,33 @@ import {
   timestamp,
   primaryKey,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+// Credentials are not stored here: APP_PASSWORD_<USERNAME> / MCP_SECRET_<USERNAME> env vars (see lib/users.ts).
+export const users = pgTable(
+  "users",
+  {
+    id: serial("id").primaryKey(),
+    username: text("username").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("users_username_idx").on(t.username)],
+);
 
 export const workouts = pgTable("workouts", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   // 0 = Sunday … 6 = Saturday; null = no fixed day
   dayOfWeek: integer("day_of_week"),
   note: text("note"),
   archived: boolean("archived").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [index("workouts_user_idx").on(t.userId)]);
 
 export const exercises = pgTable(
   "exercises",
@@ -88,5 +104,6 @@ export const weightLogs = pgTable(
   (t) => [primaryKey({ columns: [t.sessionId, t.exerciseId] })],
 );
 
+export type User = typeof users.$inferSelect;
 export type Workout = typeof workouts.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;

@@ -1,25 +1,22 @@
-import { timingSafeEqual } from "node:crypto";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { buildMcpServer } from "@/lib/mcp";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { userForMcpKey } from "@/lib/users";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 // The secret lives in the URL path, so the connector works in claude.ai without OAuth.
-function keyOk(key: string) {
-  const secret = process.env.MCP_SECRET;
-  if (!secret || secret.length < 24) return false;
-  const a = Buffer.from(key);
-  const b = Buffer.from(secret);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
+// Each user has their own secret (MCP_SECRET_<USERNAME>), which decides whose data the server sees.
 async function handle(req: Request, ctx: { params: Promise<{ key: string }> }) {
   const { key } = await ctx.params;
-  if (!keyOk(key)) return new Response("Not found", { status: 404 });
+  if (key.length < 24) return new Response("Not found", { status: 404 });
+  const user = userForMcpKey(key, await db().select({ id: users.id, username: users.username, name: users.name }).from(users));
+  if (!user) return new Response("Not found", { status: 404 });
 
   // Stateless: a fresh server + transport per request (fits serverless).
-  const server = buildMcpServer();
+  const server = buildMcpServer(user);
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   await server.connect(transport);
   try {

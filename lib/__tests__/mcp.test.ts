@@ -9,7 +9,7 @@ vi.mock("../db", () => ({ db: () => fake.db }));
 import { buildMcpServer } from "../mcp";
 
 async function connect() {
-  const server = buildMcpServer();
+  const server = buildMcpServer({ id: 1, name: "לירן" });
   const client = new Client({ name: "test", version: "1.0.0" });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(a), client.connect(b)]);
@@ -33,6 +33,12 @@ describe("mcp server", () => {
     expect(tools.map((t) => t.name).sort()).toEqual(
       ["delete_workout", "get_history", "get_progress", "list_workouts", "log_workout", "save_workout", "search_exercise_demos", "set_workout_day"].sort(),
     );
+  });
+
+  it("names the user in the tool descriptions", async () => {
+    const { tools } = await (await connect()).listTools();
+    expect(tools.find((t) => t.name === "list_workouts")?.description).toContain("לירן's workout plans");
+    expect(tools.find((t) => t.name === "get_history")?.description).toContain("Sessions לירן actually did");
   });
 
   it("list_workouts returns an empty list when there are no workouts", async () => {

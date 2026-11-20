@@ -5,15 +5,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "./db";
 import { sessions, setLogs, weightLogs, workouts } from "./schema";
-import { requireAuth, signIn, signOut } from "./auth";
+import { requireUser, signIn, signOut } from "./auth";
+import { ownsSession, ownsWorkout } from "./access";
 import { upsertWorkout, type WorkoutInput } from "./workouts";
 import { restartSessionClock } from "./sessions";
 
 /* ---------- auth ---------- */
 
 export async function loginAction(_: unknown, form: FormData) {
-  const ok = await signIn(String(form.get("password") ?? ""));
-  if (!ok) return { error: "סיסמה שגויה" };
+  const ok = await signIn(String(form.get("username") ?? ""), String(form.get("password") ?? ""));
+  if (!ok) return { error: "שם משתמש או סיסמה שגויים" };
   redirect("/");
 }
 
@@ -24,8 +25,18 @@ export async function logoutAction() {
 
 /* ---------- sessions ---------- */
 
+async function requireSession(sessionId: number) {
+  const userId = await requireUser();
+  if (!(await ownsSession(userId, sessionId))) throw new Error("session not found");
+}
+
+async function requireWorkout(workoutId: number) {
+  const userId = await requireUser();
+  if (!(await ownsWorkout(userId, workoutId))) throw new Error("workout not found");
+}
+
 export async function startSession(workoutId: number) {
-  await requireAuth();
+  await requireWorkout(workoutId);
   // Resume an unfinished session from the last 12 hours instead of opening a new one.
   const since = new Date(Date.now() - 12 * 3600_000);
   const [open] = await db()
@@ -41,7 +52,7 @@ export async function startSession(workoutId: number) {
 }
 
 export async function toggleSet(sessionId: number, exerciseId: number, setIndex: number, done: boolean) {
-  await requireAuth();
+  await requireSession(sessionId);
   if (done) {
     await db().insert(setLogs).values({ sessionId, exerciseId, setIndex }).onConflictDoNothing();
   } else {
@@ -52,7 +63,7 @@ export async function toggleSet(sessionId: number, exerciseId: number, setIndex:
 }
 
 export async function saveWeight(sessionId: number, exerciseId: number, weight: string) {
-  await requireAuth();
+  await requireSession(sessionId);
   const n = Number(weight.replace(",", "."));
   if (weight.trim() === "" || !Number.isFinite(n) || n < 0) {
     await db()
@@ -70,7 +81,7 @@ export async function saveWeight(sessionId: number, exerciseId: number, weight: 
 }
 
 export async function finishSession(sessionId: number) {
-  await requireAuth();
+  await requireSession(sessionId);
   await db().update(sessions).set({ finishedAt: new Date() }).where(eq(sessions.id, sessionId));
   revalidatePath("/");
   revalidatePath("/history");
@@ -78,20 +89,20 @@ export async function finishSession(sessionId: number) {
 }
 
 export async function restartTimer(sessionId: number) {
-  await requireAuth();
+  await requireSession(sessionId);
   const res = await restartSessionClock(sessionId);
   revalidatePath(`/sessions/${sessionId}`);
   return res;
 }
 
 export async function reopenSession(sessionId: number) {
-  await requireAuth();
+  await requireSession(sessionId);
   await db().update(sessions).set({ finishedAt: null }).where(eq(sessions.id, sessionId));
   revalidatePath(`/sessions/${sessionId}`);
 }
 
 export async function deleteSession(sessionId: number) {
-  await requireAuth();
+  await requireSession(sessionId);
   await db().delete(sessions).where(eq(sessions.id, sessionId));
   revalidatePath("/history");
   revalidatePath("/");
@@ -102,15 +113,15 @@ export async function deleteSession(sessionId: number) {
 export type { ExerciseInput, WorkoutInput } from "./workouts";
 
 export async function saveWorkout(input: WorkoutInput) {
-  await requireAuth();
-  const res = await upsertWorkout(input);
+  const userId = await requireUser();
+  const res = await upsertWorkout(input, userId);
   if ("error" in res) return res;
   revalidatePath("/");
   redirect("/");
 }
 
 export async function archiveWorkout(workoutId: number) {
-  await requireAuth();
+  await requireWorkout(workoutId);
   await db().update(workouts).set({ archived: true }).where(eq(workouts.id, workoutId));
   revalidatePath("/");
   redirect("/");

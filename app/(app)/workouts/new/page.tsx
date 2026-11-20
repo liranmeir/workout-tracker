@@ -1,7 +1,7 @@
 import WorkoutEditor from "@/components/WorkoutEditor";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export default async function NewWorkout() {
-  await requireAuth();
+  await requireUser();
   return <WorkoutEditor />;
 }

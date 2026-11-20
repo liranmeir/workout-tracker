@@ -27,7 +27,7 @@ const clean = (s: string | undefined | null) => (s ?? "").trim();
 const orNull = (s: string | undefined | null) => clean(s) || null;
 
 /** Create or update a workout and its exercises. Shared by the UI and the MCP server. */
-export async function upsertWorkout(input: WorkoutInput): Promise<{ id: number } | { error: string }> {
+export async function upsertWorkout(input: WorkoutInput, userId: number): Promise<{ id: number } | { error: string }> {
   const name = clean(input.name);
   if (!name) return { error: "צריך שם לאימון" };
   const rows = input.exercises.filter((e) => clean(e.name));
@@ -36,12 +36,15 @@ export async function upsertWorkout(input: WorkoutInput): Promise<{ id: number }
   const day = input.dayOfWeek != null && input.dayOfWeek >= 0 && input.dayOfWeek <= 6 ? input.dayOfWeek : null;
   let workoutId = input.id;
   if (workoutId) {
-    const [found] = await db().select({ id: workouts.id }).from(workouts).where(eq(workouts.id, workoutId));
+    const [found] = await db().select({ id: workouts.id }).from(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)));
     if (!found) return { error: `workout ${workoutId} not found` };
-    await db().update(workouts).set({ name, dayOfWeek: day, note: orNull(input.note), archived: false }).where(eq(workouts.id, workoutId));
+    await db()
+      .update(workouts)
+      .set({ name, dayOfWeek: day, note: orNull(input.note), archived: false })
+      .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)));
   } else {
     workoutId = (
-      await db().insert(workouts).values({ name, dayOfWeek: day, note: orNull(input.note) }).returning({ id: workouts.id })
+      await db().insert(workouts).values({ userId, name, dayOfWeek: day, note: orNull(input.note) }).returning({ id: workouts.id })
     )[0].id;
   }
 

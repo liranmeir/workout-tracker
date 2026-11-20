@@ -32,16 +32,16 @@ beforeEach(() => {
 
 describe("upsertWorkout validation", () => {
   it("rejects an empty name without touching the db", async () => {
-    expect(await upsertWorkout(input({ name: "   " }))).toEqual({ error: "צריך שם לאימון" });
+    expect(await upsertWorkout(input({ name: "   " }), 1)).toEqual({ error: "צריך שם לאימון" });
     expect(fake.calls).toHaveLength(0);
   });
   it("rejects a workout with no named exercises", async () => {
-    expect(await upsertWorkout(input({ exercises: [ex({ name: " " })] }))).toEqual({ error: "צריך לפחות תרגיל אחד" });
+    expect(await upsertWorkout(input({ exercises: [ex({ name: " " })] }), 1)).toEqual({ error: "צריך לפחות תרגיל אחד" });
     expect(fake.calls).toHaveLength(0);
   });
   it("returns an error when updating a missing workout", async () => {
     fake.queue("select", []);
-    expect(await upsertWorkout(input({ id: 99 }))).toEqual({ error: "workout 99 not found" });
+    expect(await upsertWorkout(input({ id: 99 }), 1)).toEqual({ error: "workout 99 not found" });
   });
 });
 
@@ -52,14 +52,15 @@ describe("upsertWorkout creating", () => {
   });
 
   it("returns the new id and trims/normalises the workout", async () => {
-    const res = await upsertWorkout(input({ name: "  רגליים ", note: "  ", dayOfWeek: 9 }));
+    const res = await upsertWorkout(input({ name: "  רגליים ", note: "  ", dayOfWeek: 9 }), 1);
     expect(res).toEqual({ id: 7 });
-    expect(fake.of("insert")[0].values).toEqual({ name: "רגליים", dayOfWeek: null, note: null });
+    expect(fake.of("insert")[0].values).toEqual({ userId: 1, name: "רגליים", dayOfWeek: null, note: null });
   });
 
   it("sanitises exercise fields", async () => {
     await upsertWorkout(
       input({ exercises: [ex({ sets: 99, defaultWeight: "22,5", mediaId: "bad id!", pair: " ", tip: " tip " })] }),
+      1,
     );
     expect(fake.of("insert")[1].values).toMatchObject({
       workoutId: 7,
@@ -73,21 +74,28 @@ describe("upsertWorkout creating", () => {
   });
 
   it("forces check items to a single set and drops non-numeric weights", async () => {
-    await upsertWorkout(input({ exercises: [ex({ kind: "check", sets: 5, defaultWeight: "abc" })] }));
+    await upsertWorkout(input({ exercises: [ex({ kind: "check", sets: 5, defaultWeight: "abc" })] }), 1);
     expect(fake.of("insert")[1].values).toMatchObject({ kind: "check", sets: 1, defaultWeight: null });
   });
 
   it("archives rows that were removed instead of deleting them", async () => {
-    await upsertWorkout(input());
+    await upsertWorkout(input(), 1);
     expect(fake.of("delete")).toHaveLength(0);
     expect(fake.of("update").at(-1)?.set).toEqual({ archived: true });
   });
 });
 
 describe("upsertWorkout updating", () => {
+  it("refuses to update a workout owned by another user", async () => {
+    fake.queue("select", []); // scoped lookup by (id, userId) finds nothing
+    expect(await upsertWorkout(input({ id: 5 }), 2)).toEqual({ error: "workout 5 not found" });
+    expect(fake.of("update")).toHaveLength(0);
+    expect(fake.of("insert")).toHaveLength(0);
+  });
+
   it("reuses an existing exercise with the same name so history stays linked", async () => {
     fake.queue("select", [{ id: 5 }], [{ id: 50, name: "סקוואט" }]);
-    expect(await upsertWorkout(input({ id: 5 }))).toEqual({ id: 5 });
+    expect(await upsertWorkout(input({ id: 5 }), 1)).toEqual({ id: 5 });
     expect(fake.of("insert")).toHaveLength(0);
     expect(fake.of("update").some((c) => (c.set as { name?: string })?.name === "סקוואט")).toBe(true);
   });
