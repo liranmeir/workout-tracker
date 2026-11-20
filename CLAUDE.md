@@ -13,6 +13,7 @@
 
 ## Pull requests with UI changes
 - Every PR that changes what the user sees must include **before and after screenshots** in its description (mobile width, ~430px, dark mode).
-- Commit the images under `docs/pr/` on the PR branch and link them with `https://github.com/<owner>/<repo>/blob/<branch>/docs/pr/<file>.png?raw=true`. Remove `docs/pr/` before or when merging.
+- Commit the images under `docs/pr/` on the PR branch and link them **by commit SHA**, never by branch name: `https://github.com/<owner>/<repo>/blob/<sha>/docs/pr/<file>.png?raw=true`, where `<sha>` is the commit that added the images (`git rev-parse HEAD` right after committing them). Branch links break as soon as `docs/pr/` is removed.
+- Remove `docs/pr/` before or when merging. The SHA links keep working afterwards.
 - If the app can't run (no database), render a static page with the real CSS/fonts and say so in the PR.
 - The step-by-step procedure is in the `pr-screenshots` skill (`.claude/skills/pr-screenshots/SKILL.md`).
