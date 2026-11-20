@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtClock, parseCues, progress } from "../tracker";
+import { fmtClock, parseCues, parseTimed, progress } from "../tracker";
 
 describe("fmtClock", () => {
   it("formats minutes and zero-padded seconds", () => {
@@ -42,5 +42,29 @@ describe("parseCues", () => {
     expect(parseCues("")).toEqual([]);
     expect(parseCues(null)).toEqual([]);
     expect(parseCues(undefined)).toEqual([]);
+  });
+});
+
+describe("parseTimed", () => {
+  it("reads seconds", () => {
+    expect(parseTimed("40 שנ׳")).toEqual({ seconds: 40, rounds: 1 });
+    expect(parseTimed("30 שניות")).toEqual({ seconds: 30, rounds: 1 });
+    expect(parseTimed("45s")).toEqual({ seconds: 45, rounds: 1 });
+  });
+  it("runs two rounds for per-side holds", () => {
+    expect(parseTimed("30 שנ׳ לכל צד")).toEqual({ seconds: 30, rounds: 2 });
+  });
+  it("reads minutes", () => {
+    expect(parseTimed("1 דק׳")).toEqual({ seconds: 60, rounds: 1 });
+  });
+  it("ignores rep-based exercises", () => {
+    expect(parseTimed("8–10")).toBeNull();
+    expect(parseTimed("10 לכל רגל")).toBeNull();
+    expect(parseTimed("10 לכל צד")).toBeNull();
+    expect(parseTimed("")).toBeNull();
+    expect(parseTimed(null)).toBeNull();
+  });
+  it("rejects absurd durations", () => {
+    expect(parseTimed("900 שנ׳")).toBeNull();
   });
 });

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { finishSession, reopenSession, restartTimer, saveWeight, toggleSet } from "@/lib/actions";
 import { fmtWeight } from "@/lib/days";
-import { fmtClock as fmt, parseCues, progress } from "@/lib/tracker";
+import { fmtClock as fmt, parseCues, parseTimed, progress } from "@/lib/tracker";
 import ExerciseDemo from "./ExerciseDemo";
 
 export type TrackerExercise = {
@@ -87,7 +87,7 @@ export default function Tracker(p: Props) {
 
   /* rest timer */
   const [restEnd, setRestEnd] = useState(0);
-  const [toast, setToast] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const lastRest = useRef(90);
   const audio = useRef<AudioContext | null>(null);
   const unlock = () => {
@@ -111,21 +111,52 @@ export default function Tracker(p: Props) {
       navigator.vibrate?.([200, 100, 200]);
     } catch {}
   };
+  const showToast = (msg: string) => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  };
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const restLeft = restEnd ? Math.max(0, Math.ceil((restEnd - now) / 1000)) : 0;
   useEffect(() => {
     if (restEnd && restLeft === 0) {
       setRestEnd(0);
       beep();
-      setToast(true);
-      const t = setTimeout(() => setToast(false), 3500);
-      return () => clearTimeout(t);
+      showToast("המנוחה נגמרה – לסט הבא");
     }
   }, [restEnd, restLeft]);
+
+  /* work timer for timed exercises (plank, carries…) */
+  const [work, setWork] = useState<{ name: string; seconds: number; round: number; rounds: number; end: number } | null>(null);
+  const workLeft = work ? Math.max(0, Math.ceil((work.end - now) / 1000)) : 0;
+  useEffect(() => {
+    if (!work || workLeft > 0) return;
+    beep();
+    if (work.round < work.rounds) {
+      showToast("החלף צד");
+      setWork({ ...work, round: work.round + 1, end: Date.now() + work.seconds * 1000 });
+    } else {
+      setWork(null);
+      showToast("הזמן נגמר – סמן את הסט");
+    }
+  }, [work, workLeft]);
+  const startWork = (e: TrackerExercise) => {
+    const t = parseTimed(e.reps);
+    if (!t) return;
+    unlock();
+    setToast(null);
+    setRestEnd(0);
+    setNow(Date.now());
+    setWork({ name: e.name, seconds: t.seconds, round: 1, rounds: t.rounds, end: Date.now() + t.seconds * 1000 });
+  };
+
   const startRest = (sec: number) => {
     unlock();
-    setToast(false);
+    setToast(null);
+    setWork(null);
     if (!sec) return setRestEnd(0);
     lastRest.current = sec;
+    setNow(Date.now());
     setRestEnd(Date.now() + sec * 1000);
   };
 
@@ -208,14 +239,25 @@ export default function Tracker(p: Props) {
             </span>
           </div>
           <div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-          <div className="rest">
-            <span className="lbl">מנוחה</span>
-            {[60, 90, 120].map((s) => (
-              <button key={s} className="tbtn" onClick={() => startRest(s)}>{s}</button>
-            ))}
-            <button className="tbtn" onClick={() => startRest(0)} aria-label="עצור טיימר">✕</button>
-            <span className={`clock${restLeft ? " run" : ""}`} aria-live="polite">{fmt(restLeft)}</span>
-          </div>
+          {work ? (
+            <div className="rest work">
+              <span className="lbl">
+                ⏱ {work.name}
+                {work.rounds > 1 && <span className="side"> · צד {work.round}/{work.rounds}</span>}
+              </span>
+              <button className="tbtn" onClick={() => setWork(null)} aria-label="עצור טיימר עבודה">✕</button>
+              <span className="clock work" aria-live="polite">{fmt(workLeft)}</span>
+            </div>
+          ) : (
+            <div className="rest">
+              <span className="lbl">מנוחה</span>
+              {[60, 90, 120].map((s) => (
+                <button key={s} className="tbtn" onClick={() => startRest(s)}>{s}</button>
+              ))}
+              <button className="tbtn" onClick={() => startRest(0)} aria-label="עצור טיימר">✕</button>
+              <span className={`clock${restLeft ? " run" : ""}`} aria-live="polite">{fmt(restLeft)}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -297,6 +339,11 @@ export default function Tracker(p: Props) {
                         )}
                       </>
                     )}
+                    {parseTimed(e.reps) && (
+                      <button className={`go${work?.name === e.name ? " on" : ""}`} onClick={() => startWork(e)}>
+                        ▶ טיימר {parseTimed(e.reps)!.seconds} שנ׳{parseTimed(e.reps)!.rounds > 1 ? " × 2 צדדים" : ""}
+                      </button>
+                    )}
                     <div className="sets">
                       {Array.from({ length: e.sets }, (_, i) => {
                         const on = done.has(`${e.id}-${i}`);
@@ -333,7 +380,7 @@ export default function Tracker(p: Props) {
           </div>
         )}
       </main>
-      <div className={`toast${toast ? " show" : ""}`}>המנוחה נגמרה – לסט הבא</div>
+      <div className={`toast${toast ? " show" : ""}`}>{toast}</div>
     </>
   );
 }

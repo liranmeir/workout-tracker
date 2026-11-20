@@ -18,3 +18,16 @@ export function parseCues(tip: string | null | undefined): string[] {
     .map((c) => c.trim())
     .filter(Boolean);
 }
+
+/**
+ * Reads a timed target like "40 שנ׳" or "30 שנ׳ לכל צד" from an exercise's reps.
+ * Returns null for rep-based exercises ("8–10", "10 לכל רגל").
+ */
+export function parseTimed(reps: string | null | undefined): { seconds: number; rounds: number } | null {
+  if (!reps) return null;
+  const m = reps.match(/(\d+)\s*(?:שנ[׳'"]?|שניות|שנייה|sec|s\b)/i);
+  const min = reps.match(/(\d+)\s*(?:דק[׳'"]?|דקות|דקה|min)/i);
+  const seconds = m ? Number(m[1]) : min ? Number(min[1]) * 60 : 0;
+  if (!seconds || seconds > 600) return null;
+  return { seconds, rounds: /לכל צד/.test(reps) ? 2 : 1 };
+}
