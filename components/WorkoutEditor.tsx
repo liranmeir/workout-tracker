@@ -217,7 +217,7 @@ export default function WorkoutEditor({ initial }: { initial?: WorkoutInput }) {
                     דגשים (אופציונלי – דגש בכל שורה)
                     <textarea rows={3} value={e.tip} onChange={(ev) => setEx(r.key, { tip: ev.target.value })} />
                   </label>
-                  {e.kind === "sets" && <MediaPicker value={e.mediaId} onChange={(mediaId) => setEx(r.key, { mediaId })} />}
+                  <MediaPicker value={e.mediaId} onChange={(mediaId) => setEx(r.key, { mediaId })} />
 
                   <div className="row ex-foot">
                     <button type="button" className="btn small danger" onClick={() => remove(r.key)}>הסר תרגיל</button>
