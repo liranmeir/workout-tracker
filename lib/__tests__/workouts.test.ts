@@ -77,6 +77,11 @@ describe("upsertWorkout creating", () => {
     expect(fake.of("insert")[1].values).toMatchObject({ kind: "check", sets: 1, defaultWeight: null });
   });
 
+  it("keeps a demo on check items (stretches, warm-ups)", async () => {
+    await upsertWorkout(input({ exercises: [ex({ kind: "check", name: "תאומים", mediaId: "Calf_Stretch_Hands_Against_Wall" })] }));
+    expect(fake.of("insert")[1].values).toMatchObject({ kind: "check", mediaId: "Calf_Stretch_Hands_Against_Wall" });
+  });
+
   it("archives rows that were removed instead of deleting them", async () => {
     await upsertWorkout(input());
     expect(fake.of("delete")).toHaveLength(0);
