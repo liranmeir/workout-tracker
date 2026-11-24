@@ -79,7 +79,7 @@ describe("upsertWorkout creating", () => {
   });
 
   it("keeps a demo on check items (stretches, warm-ups)", async () => {
-    await upsertWorkout(input({ exercises: [ex({ kind: "check", name: "תאומים", mediaId: "Calf_Stretch_Hands_Against_Wall" })] }));
+    await upsertWorkout(input({ exercises: [ex({ kind: "check", name: "תאומים", mediaId: "Calf_Stretch_Hands_Against_Wall" })] }), 1);
     expect(fake.of("insert")[1].values).toMatchObject({ kind: "check", mediaId: "Calf_Stretch_Hands_Against_Wall" });
   });
 
