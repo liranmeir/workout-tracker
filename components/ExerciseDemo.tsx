@@ -5,7 +5,7 @@ import { mediaFrames } from "@/lib/media";
 
 // Two-frame looping demo (start / end position), like a small GIF.
 // Tap to open it large.
-export default function ExerciseDemo({ mediaId, name, size = "sm" }: { mediaId: string; name: string; size?: "sm" | "lg" }) {
+export default function ExerciseDemo({ mediaId, name, size = "sm" }: { mediaId: string; name: string; size?: "xs" | "sm" | "lg" }) {
   const [a, b] = mediaFrames(mediaId);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);

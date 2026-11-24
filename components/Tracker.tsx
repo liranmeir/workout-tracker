@@ -280,7 +280,8 @@ export default function Tracker(p: Props) {
                   return (
                     <div key={e.id} className="check">
                       <button className={`chk${on ? " on" : ""}`} aria-pressed={on} aria-label={e.name} onClick={() => toggle(e, 0)}>✓</button>
-                      <span>{e.name}{e.reps && <span className="meta"> · {e.reps}</span>}</span>
+                      <span className="grow">{e.name}{e.reps && <span className="meta"> · {e.reps}</span>}</span>
+                      {e.mediaId && <ExerciseDemo mediaId={e.mediaId} name={e.name} size="xs" />}
                     </div>
                   );
                 })}
@@ -293,7 +294,8 @@ export default function Tracker(p: Props) {
                   return (
                     <div key={e.id} className="card check">
                       <button className={`chk${on ? " on" : ""}`} aria-pressed={on} aria-label={e.name} onClick={() => toggle(e, 0)}>✓</button>
-                      <span>{e.name}</span>
+                      <span className="grow">{e.name}</span>
+                      {e.mediaId && <ExerciseDemo mediaId={e.mediaId} name={e.name} size="xs" />}
                     </div>
                   );
                 }

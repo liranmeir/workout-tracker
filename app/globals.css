@@ -224,6 +224,7 @@ table.prog td.n { text-align: end; font-variant-numeric: tabular-nums; white-spa
 .demo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .demo .demo-b { animation: demo-flip 1.8s steps(1, end) infinite; }
 @keyframes demo-flip { 0% { opacity: 0; } 50% { opacity: 1; } }
+.demo-xs { width: 60px; height: 40px; border-radius: 8px; }
 .demo-sm { width: 84px; height: 56px; }
 .demo-lg { width: 120px; height: 80px; }
 .demo-xl { width: 100%; aspect-ratio: 850 / 569; }
